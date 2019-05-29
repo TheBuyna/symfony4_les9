@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Service\MarkdownHelper;
 use Michelf\MarkdownInterface;
+use Nexy\Slack\Client;
 use Psr\Log\LoggerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,6 +16,15 @@ use Twig\Environment;
 class ArticleController extends AbstractController
 {
     /**
+     * Currently unused: just showing a controller with a constructor!
+     */
+    private $isDebug;
+    public function __construct(bool $isDebug)
+    {
+        $this->isDebug = $isDebug;
+    }
+
+    /**
      * @Route("/", name="app_homepage")
      */
     public function homepage()
@@ -25,8 +35,17 @@ class ArticleController extends AbstractController
     /**
      * @Route("/news/{slug}", name="article_show")
      */
-    public function show($slug, MarkdownInterface $markdown, AdapterInterface $cache, MarkdownHelper $markdownHelper)
+    public function show($slug, MarkdownHelper $markdownHelper, Client $slack)
     {
+        if ($slug === 'khaaaaaan')
+        {
+            $message = $slack->createMessage()
+                ->from('Khan')
+                ->withIcon(':ghost:')
+                ->setText('Ah, Kirk, my old friend...');
+            $slack->sendMessage($message);
+        }
+
         $comments = [
             'I ate a normal rock once. It did NOT taste like bacon!',
             'Woohoo! I\'m going on an all-asteroid diet!',
@@ -49,13 +68,8 @@ strip steak pork belly aliquip capicola officia. Labore deserunt esse chicken lo
 cow est ribeye adipisicing. Pig hamburger pork belly enim. Do porchetta minim capicola irure pancetta chuck
 fugiat.
 EOF;
-        $item = $cache->getItem('markdown_'.md5($articleContent));
-        if (!$item->isHit()) {
-            $item->set($markdown->transform($articleContent));
-            $cache->save($item);
-        }
-
         $articleContent = $markdownHelper->parse($articleContent);
+
         return $this->render('article/show.html.twig', [
             'title' => ucwords(str_replace('-', ' ', $slug)),
             'articleContent' => $articleContent,

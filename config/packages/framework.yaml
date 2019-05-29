@@ -1,3 +1,6 @@
+parameters:
+    cache_adapter: 'cache.adapter.filesystem'
+
 framework:
     secret: '%env(APP_SECRET)%'
     #default_locale: en
@@ -28,3 +31,4 @@ framework:
 
         # APCu (not recommended with heavy random-write workloads as memory fragmentation can cause perf issues)
         #app: cache.adapter.apcu
+        app: '%cache_adapter%'
