@@ -10,23 +10,24 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class SpelerController extends AbstractController
 {
-    private $databaseHelper;
+    private $db;
 
-    public function __construct(DatabaseHelper $databaseHelper)
+    public function __construct(DatabaseHelper $db)
     {
-        $this->databaseHelper = $databaseHelper;
+        $this->db = $db;
     }
+
     //GET
     /**
      * @Route("/api/spelers", name="api_spelers", methods={"GET"})
      */
     public function GetAll()
     {
-        list ( $result, $rows) = $this->GetData();
+        $result = $this->GetData();
         $return_result = $result ? "OK" : "Err";
 
         $response = array( "result" => $return_result,
-            "data" => $rows);
+            "data" => $this->db->rows);
 
         return $this->json($response);
     }
@@ -36,34 +37,21 @@ class SpelerController extends AbstractController
      */
     public function GetOne($id)
     {
-        list ( $result, $rows) = $this->GetData($id);
+        $result = $this->GetData($id);
         $return_result = $result ? "OK" : "Err";
 
         $response = array( "result" => $return_result,
-            "data" => $rows);
+            "data" => $this->db->rows);
 
         return $this->json($response);
     }
 
     public function GetData($id = null)
     {
-        $rows = array();
-
         $sql = "select * from spelers";
         if ( $id > 0 ) $sql .= " where spe_id=$id";
-
-        $result = $this->databaseHelper->execSqlCommand($sql);
-        if ( $result )
-        {
-            while ( $row = $result->fetch_assoc())
-            {
-                $rows[] = $row;
-            }
-        }
-
-        return array( $result, $rows);
+        return  $this->db->exec($sql);
     }
-
 
     //POST
     /**
@@ -71,9 +59,9 @@ class SpelerController extends AbstractController
      */
     public function Post()
     {
-        list( $result, $new_id ) = $this->CreateSpeler();
+        $result = $this->CreateSpeler();
 
-        if ( $result ) $rows = array( "result" => "OK", "msg" => "Speler aangemaakt", "id" => $new_id);
+        if ( $result ) $rows = array( "result" => "OK", "msg" => "Speler aangemaakt", "id" => $this->db->new_id);
         else           $rows = array( "result" => "Err", "msg" => "Fout bij het aanmaken van deze speler");
 
         return $this->json($rows);
@@ -82,12 +70,8 @@ class SpelerController extends AbstractController
     public function CreateSpeler()
     {
         $newspeler=$_POST["naam"];
-
         $sql = "INSERT INTO spelers SET spe_naam='$newspeler'";
-        $result = $this->databaseHelper->execSqlCommand($sql);
-
-        $new_id = $this->databaseHelper->VerbindMetMySql()->insert_id;
-        return array($result, $new_id);
+        return $this->db->exec($sql);
     }
 
     //PUT
@@ -109,12 +93,8 @@ class SpelerController extends AbstractController
         $contents = json_decode( file_get_contents("php://input") );
         $newspeler = $contents->naam;
 
-
-
         $sql = "UPDATE spelers SET spe_naam='$newspeler' where spe_id=$id";
-        $result = $this->databaseHelper->execSqlCommand($sql);
-
-        return array($result);
+        return $this->db->exec($sql);
     }
 
     //DELETE
@@ -133,10 +113,8 @@ class SpelerController extends AbstractController
 
     public function RemoveSpeler($id)
     {
-
         $sql = "DELETE FROM spelers where spe_id=$id";
-        $result = $this->databaseHelper->execSqlCommand($sql);
-
-        return $result;
+        return $this->db->exec($sql);
     }
+
 }

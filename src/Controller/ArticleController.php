@@ -24,7 +24,7 @@ class ArticleController extends AbstractController
     /**
      * @Route("/news/{slug}", name="article_show")
      */
-    public function show($slug, MarkdownInterface $markdown, AdapterInterface $cache)
+    public function show($slug, MarkdownInterface $markdown, AdapterInterface $cache,  MarkdownHelper $markdownHelper)
     {
         $comments = [
             'I ate a normal rock once. It did NOT taste like bacon!',
@@ -54,7 +54,7 @@ EOF;
             $cache->save($item);
         }
 
-        $articleContent = $item->get();
+        $articleContent = $markdownHelper->parse($articleContent);
         return $this->render('article/show.html.twig', [
             'title' => ucwords(str_replace('-', ' ', $slug)),
             'articleContent' => $articleContent,
